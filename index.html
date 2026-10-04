@@ -45,12 +45,21 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"M PLUS Rounded 
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding:12px 0 8px;}
 .brand{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .brand h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.02em;white-space:nowrap;}
-.brand input{flex:1;min-width:0;}
+.tsub{flex:1;min-width:0;font-size:13px;color:var(--sub);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dlrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto;gap:8px;align-items:center;margin-bottom:8px;}
+.qa{display:flex;flex-wrap:wrap;gap:8px;}
+.trow.dn{opacity:.6;}
+.trow.dn input[type=text]{text-decoration:line-through;}
+.tl1{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;}
+.chip.tkc{background:var(--lav);color:var(--ink);}
+.flag.tf{color:var(--warn);}
 .mini{border:0;background:var(--pink);color:#3b2340;font:inherit;font-weight:800;font-size:13px;border-radius:999px;padding:3px 10px;cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums;}
 .mini[hidden]{display:none;}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:var(--pink-soft);padding:5px;border-radius:999px;}
-.tabs.two{grid-template-columns:1fr 1fr;}
-.tabs button{border:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-size:13px;padding:8px 2px;border-radius:999px;cursor:pointer;white-space:nowrap;}
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;background:var(--pink-soft);padding:4px;border-radius:22px;}
+.tabs button{border:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-size:10.5px;line-height:1.25;padding:5px 0 4px;border-radius:18px;cursor:pointer;white-space:nowrap;display:flex;flex-direction:column;align-items:center;}
+.tabs button .e{font-size:17px;line-height:1.25;}
+.tabs.two button{font-size:13px;padding:8px 2px;flex-direction:row;justify-content:center;border-radius:999px;}
+.tabs.two{border-radius:999px;grid-template-columns:repeat(2,minmax(0,1fr));}
 .tabs button.on{background:var(--card);box-shadow:0 2px 0 var(--pink);}
 .tabs button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--pink);outline-offset:2px;}
 .card{background:var(--card);border:2px solid var(--line);border-radius:22px;padding:16px;margin:14px 0;}
@@ -58,9 +67,11 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;backgroun
 .note{color:var(--sub);font-size:12.5px;margin:2px 0 10px;}
 label.f{display:block;font-size:12.5px;font-weight:700;color:var(--sub);margin-bottom:4px;}
 input[type=text],input[type=number],input[type=date]{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:8px 10px;width:100%;min-width:0;}
+input[type=date]{-webkit-appearance:none;appearance:none;min-height:46px;text-align:left;display:block;}
+input[type=date]::-webkit-date-and-time-value{text-align:left;}
 input[type=checkbox]{width:20px;height:20px;accent-color:var(--pink);flex:none;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
 .wd{text-align:center;}
 .wd span{display:block;font-size:12.5px;font-weight:700;margin-bottom:3px;}
 .wd span.sun{color:var(--bad);} .wd span.sat{color:#4a8fd6;}
@@ -92,7 +103,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--pink);flex:none;}
 .meter i{height:10px;border-radius:5px;background:var(--line);}
 .meter i.on{outline:3px solid var(--ink);outline-offset:1px;}
 .big{font-size:26px;font-weight:800;margin:0;}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+.stats{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:10px;}
 .stat{background:var(--bg);border-radius:14px;padding:10px 12px;}
 .stat b{display:block;font-size:12px;color:var(--sub);}
 .stat span{font-weight:800;font-size:17px;}
@@ -167,7 +178,9 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--pink);flex:none;}
   .cell{min-height:62px;}
   .chip{font-size:8.5px;padding:0 2px;}
   .brand h1{font-size:17px;}
-  .tabs button{font-size:12px;}
+  .card{padding:13px;border-radius:18px;}
+  .dlrow{grid-template-columns:minmax(0,1fr) auto;}
+  .dlrow .dn{grid-column:1 / -1;}
 }
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important;}}
 </style>
@@ -175,7 +188,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--pink);flex:none;}
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><h1>📅 原稿プランナー</h1><input type="text" id="titleIn" aria-label="作品タイトル" placeholder="作品タイトル（例：新刊）"><button class="mini" id="miniT" hidden></button></div>
+    <div class="brand"><h1>📅 原稿プランナー</h1><span class="tsub" id="titleSub"></span><button class="mini" id="miniT" hidden></button></div>
     <nav class="tabs" id="tabs"></nav>
   </header>
   <main id="app"></main>
@@ -219,7 +232,7 @@ function defaults(){
       {id:ids[3],name:'吹き出し',min:8,on:true,unit:true},
       {id:ids[4],name:'写植',min:8,on:true,unit:true}
     ],
-    pd:{},over:{},pview:null,pomo:{},timer:defTimer()
+    pd:{},over:{},pview:null,pomo:{},tasks:[],timer:defTimer()
   };
 }
 var fresh=false;
@@ -241,6 +254,7 @@ function load(){
         o.procs.forEach(function(p){if(p.unit===undefined)p.unit=(p.name!=='ネーム');});
         if(!o.timer)o.timer=defTimer();
         if(!o.pomo)o.pomo={};
+        if(!o.tasks)o.tasks=[];
         if(o.pview===undefined)o.pview=null;
         return o;
       }
@@ -249,17 +263,36 @@ function load(){
   fresh=true;return defaults();
 }
 var S=load();
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function save(){tuCache=null;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 var tab=fresh?'settings':'schedule';
 var calM=null,modalDate=null,scrollEd=false;
 
 /* ---------- calc ---------- */
-function capMin(d){
+function baseCap(d){
   var s=fmt(d);
   if(Object.prototype.hasOwnProperty.call(S.over,s))return S.over[s]*60;
   var h=(HOL.has(s)&&S.holSun)?S.weekday[0]:S.weekday[d.getDay()];
   return h*60;
 }
+var tuCache=null;
+function TU(){
+  if(tuCache)return tuCache;
+  var use={},plan={},short={},start=parse(S.start);
+  var ts=S.tasks.filter(function(t){return t.date&&t.est>0;}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
+  ts.forEach(function(t){
+    var rem=t.est*60,due=parse(t.date);
+    if(due<start)return;
+    for(var d=due;d>=start&&rem>0.001;d=addDays(d,-1)){
+      var ds=fmt(d),free=baseCap(d)-(use[ds]||0);
+      if(free<=0.001)continue;
+      var take=Math.min(free,rem);
+      use[ds]=(use[ds]||0)+take;(plan[ds]=plan[ds]||[]).push({id:t.id,m:take});rem-=take;
+    }
+    if(rem>0.001)short[t.id]=rem;
+  });
+  tuCache={use:use,plan:plan,short:short};return tuCache;
+}
+function capMin(d){return Math.max(0,baseCap(d)-(TU().use[fmt(d)]||0));}
 function activeProcs(){return S.procs.filter(function(p){return p.on&&p.min>0;});}
 function doneN(id){var m=S.pd[id]||{},c=0;for(var i=1;i<=S.pages;i++)if(m[i])c++;return c;}
 function remaining(){var r=0;activeProcs().forEach(function(p){r+=(S.pages-doneN(p.id))*p.min;});return r;}
@@ -348,21 +381,22 @@ function pageComplete(i){
 
 /* ---------- views ---------- */
 function header(){
-  var tabs=[['settings','⚙️ 設定'],['schedule','📊 予定'],['progress','✅ 進捗'],['timer','⏱ タイマー']];
+  var tabs=[['settings','⚙️','設定'],['schedule','📊','予定'],['progress','✅','進捗'],['tasks','📌','タスク'],['timer','⏱','タイマー']];
   document.getElementById('tabs').innerHTML=tabs.map(function(t){
-    return '<button data-a="tab" data-v="'+t[0]+'" class="'+(tab===t[0]?'on':'')+'">'+t[1]+'</button>';}).join('');
-  var ti=document.getElementById('titleIn');if(document.activeElement!==ti)ti.value=S.title;
+    return '<button data-a="tab" data-v="'+t[0]+'" class="'+(tab===t[0]?'on':'')+'"><span class="e">'+t[1]+'</span><span>'+t[2]+'</span></button>';}).join('');
+  var ts=document.getElementById('titleSub');if(ts)ts.textContent=S.title||'';
 }
 function viewSettings(){
   var h='';
   h+='<section class="card"><h2>📖 原稿のこと</h2><p class="note">ページ数と開始日を入れてね。</p>'+
+    '<div style="margin-bottom:10px"><label class="f" for="ttl">作品タイトル</label><input type="text" id="ttl" data-c="title" value="'+esc(S.title)+'" placeholder="例：新刊"></div>'+
     '<div class="grid2"><div><label class="f" for="pg">総ページ数</label><input type="number" id="pg" min="1" max="500" inputmode="numeric" data-c="pages" value="'+S.pages+'"></div>'+
     '<div><label class="f" for="st">作業開始日</label><input type="date" id="st" data-c="start" value="'+S.start+'"></div></div>'+
     '<div style="margin-top:10px"><label class="f" for="bf">締切の何日前に仕上げたい？（余裕日数）</label><input type="number" id="bf" min="0" max="30" inputmode="numeric" data-c="buffer" value="'+S.buffer+'"></div></section>';
   h+='<section class="card"><h2>🏁 締切</h2><p class="note">早割・通常・割増など、いくつでも登録できるよ。</p>';
   sortedDl().forEach(function(d){
-    h+='<div class="row"><div class="grow1"><input type="text" aria-label="締切の名前" data-dl="'+d.id+'" data-k="name" value="'+esc(d.name)+'"></div>'+
-      '<div style="width:150px;flex:none"><input type="date" aria-label="締切日" data-dl="'+d.id+'" data-k="date" value="'+d.date+'"></div>'+
+    h+='<div class="dlrow"><div class="dn"><input type="text" aria-label="締切の名前" data-dl="'+d.id+'" data-k="name" value="'+esc(d.name)+'"></div>'+
+      '<div><input type="date" aria-label="締切日" data-dl="'+d.id+'" data-k="date" value="'+d.date+'"></div>'+
       '<button class="icon" data-a="deldl" data-v="'+d.id+'" aria-label="削除">🗑</button></div>';
   });
   h+='<button class="btn ghost sm" data-a="adddl">＋ 締切を追加</button></section>';
@@ -389,7 +423,7 @@ function viewSchedule(){
   var dls=sortedDl();
   if(!dls.length)return '<div class="card empty">締切がまだないよ。「設定」から追加してね🏁</div>';
   var act=activeDl();
-  var h='<section class="card"><h2>🏁 締切ごとの判定</h2><p class="note">タップすると下のガント・カレンダーが切り替わるよ。いまの進捗と今日からの作業可能時間で判定してる。</p><div class="dlcards">';
+  var h=upcomingTasks()+'<section class="card"><h2>🏁 締切ごとの判定</h2><p class="note">タップすると下のガント・カレンダーが切り替わるよ。いまの進捗と今日からの作業可能時間で判定してる。</p><div class="dlcards">';
   dls.forEach(function(d){
     var st=status(d);
     h+='<button class="dl '+(act.id===d.id?'on':'')+'" data-a="pick" data-v="'+d.id+'"><div class="t"><span>'+esc(d.name)+'</span><span class="d">'+fmtJP(parse(d.date))+'</span></div>'+
@@ -460,13 +494,17 @@ function calendar(P){
       var txt=sg.group?'📄'+pageRange(a):sg.label;
       chips+='<span class="chip" title="'+esc(sg.names)+' '+fmtT(a.m)+'" style="background:'+PAL[sg.color%PAL.length]+'">'+esc(txt)+'</span>';
     });
-    var flags=(dlMap[ds]||[]).map(function(nm){return '<span class="flag">🏁'+esc(nm)+'</span>';}).join('');
+    var tchips='';
+    (TU().plan[ds]||[]).forEach(function(a){var tk=S.tasks.filter(function(q){return q.id===a.id;})[0];if(tk)tchips+='<span class="chip tkc" title="'+esc(tk.name)+' '+fmtT(a.m)+'">📌'+esc(tk.name)+'</span>';});
+    var flags=(dlMap[ds]||[]).map(function(nm){return '<span class="flag">🏁'+esc(nm)+'</span>';}).join('')+
+      S.tasks.filter(function(q){return q.date===ds&&!q.done;}).map(function(q){return '<span class="flag tf">📌〆'+esc(q.name)+'</span>';}).join('');
     h+='<button class="cell '+(inr?'':'out')+' '+(ds===t0?'today':'')+(ds===modalDate?' sel':'')+'" '+(inr?'data-a="day" data-v="'+ds+'"':'tabindex="-1" disabled')+'>'+
       '<span class="n '+(red?'red':'')+'"><span>'+d+(HOL.has(ds)?'🎌':'')+'</span></span>'+
-      (inr?'<span class="cap '+(isOv?'ov':'')+'">⏰'+(Math.round(capMin(dt)/6)/10)+'h'+(isOv?'✎':'')+'</span>':'')+chips+flags+'</button>';
+      (inr?'<span class="cap '+(isOv?'ov':'')+'">⏰'+(Math.round(capMin(dt)/6)/10)+'h'+(isOv?'✎':'')+'</span>':'')+chips+tchips+flags+'</button>';
   }
   h+='</div><div class="legend">';
   P.seq.forEach(function(sg){h+='<span><i style="background:'+PAL[sg.color%PAL.length]+'"></i>'+(sg.group?'📄 '+esc(sg.names):esc(sg.label))+'</span>';});
+  if(S.tasks.some(function(t){return t.est>0&&t.date;}))h+='<span><i style="background:var(--lav)"></i>📌 タスク</span>';
   return h+'</div></section>';
 }
 function viewProgress(){
@@ -494,10 +532,14 @@ function viewProgress(){
   /* today's plan */
   var ents=P.alloc[fmt(today())]||[];
   h+='<section class="card"><h2>📝 今日の計画</h2>';
-  if(!ents.length)h+='<p class="note">今日は計画に作業がないよ（休みの日、または計画の期間外）。</p>';
+  if(!ents.length&&!(TU().plan[fmt(today())]||[]).length)h+='<p class="note">今日は計画に作業がないよ（休みの日、または計画の期間外）。</p>';
   else ents.forEach(function(en){
     var sg=P.seq.filter(function(q){return q.key===en.key;})[0];if(!sg)return;
     h+='<div class="row"><span class="chip big2" style="background:'+PAL[sg.color%PAL.length]+'">'+(sg.group?'📄 '+esc(pageRange(en))+'（'+esc(sg.names)+'）':esc(sg.label))+'</span><b>'+fmtT(en.m)+'</b></div>';
+  });
+  (TU().plan[fmt(today())]||[]).forEach(function(a){
+    var tk=S.tasks.filter(function(q){return q.id===a.id;})[0];if(!tk)return;
+    h+='<div class="row"><span class="chip big2 tkc">📌 '+esc(tk.name)+'</span><b>'+fmtT(a.m)+'</b></div>';
   });
   h+='</section>';
   if(!ap.length)return h+'<div class="card empty">工程を設定してね⚙️</div>';
@@ -525,6 +567,50 @@ function viewProgress(){
         '<p class="note" style="margin-top:8px">丸をタップでそのページを完了／取り消し。残り '+fmtT((S.pages-dn)*p.min)+'</p></section>';
     });
   }
+  return h;
+}
+/* ---------- tasks ---------- */
+var PRESETS=['サークルカット','表紙','奥付','おしながき・ペーパー','入稿データ確認'];
+function dueInfo(t){
+  if(t.done)return {t:'✅ 完了',k:'ok'};
+  if(!t.date)return {t:'締切未設定',k:'warn'};
+  var diff=Math.round((parse(t.date)-today())/86400000);
+  if(diff<0)return {t:Math.abs(diff)+'日超過😱',k:'bad'};
+  if(diff===0)return {t:'今日が締切🔥',k:'warn'};
+  return {t:'あと'+diff+'日',k:diff<=3?'warn':'ok'};
+}
+function sortedTasks(){
+  return S.tasks.slice().sort(function(a,b){
+    if(!!a.done!==!!b.done)return a.done?1:-1;
+    var ad=a.date||'9999-99-99',bd=b.date||'9999-99-99';
+    return ad<bd?-1:ad>bd?1:0;
+  });
+}
+function upcomingTasks(){
+  var ts=sortedTasks().filter(function(t){return !t.done;}).slice(0,4);
+  var h='<section class="card"><h2>📌 近いタスク</h2>';
+  if(!ts.length)h+='<p class="note">いまのところタスクはないよ。「📌 タスク」タブから追加できるよ。</p>';
+  else ts.forEach(function(t){
+    var di=dueInfo(t);
+    h+='<div class="row"><span class="grow1"><b>'+esc(t.name)+'</b><br><span class="note" style="margin:0">'+(t.date?fmtJP(parse(t.date)):'日付なし')+'</span></span><span class="verdict v-'+di.k+'" style="margin:0">'+di.t+'</span></div>';
+  });
+  return h+'</section>';
+}
+function viewTasks(){
+  var h='<section class="card"><h2>📌 原稿以外のタスク</h2><p class="note">サークルカットや表紙など、原稿以外の作業と締切をここで管理するよ。「かかる時間」を入れると、その分を締切に向けた日々の作業時間から差し引いて、原稿の予定を組み直すよ（締切に近い日から割り当て）。完了にしても、差し引いた時間はそのままだよ。</p><div class="qa">'+
+    PRESETS.map(function(n){return '<button class="btn ghost sm" data-a="addtask" data-v="'+esc(n)+'">＋ '+esc(n)+'</button>';}).join('')+
+    '<button class="btn sm" data-a="addtask" data-v="">＋ 自由に追加</button></div></section>';
+  var ts=sortedTasks();
+  if(!ts.length)h+='<div class="card empty">まだタスクがないよ。上のボタンから追加してね📌</div>';
+  ts.forEach(function(t){
+    var di=dueInfo(t),sh=TU().short[t.id];
+    h+='<section class="card trow '+(t.done?'dn':'')+'"><div class="tl1"><input type="checkbox" aria-label="完了" data-t="'+t.id+'" data-k="done" '+(t.done?'checked':'')+'>'+
+      '<input type="text" aria-label="タスク名" data-t="'+t.id+'" data-k="name" value="'+esc(t.name)+'"><button class="icon" data-a="deltask" data-v="'+t.id+'" aria-label="削除">🗑</button></div>'+
+      '<div class="grid2" style="margin-top:8px"><div><label class="f" for="d_'+t.id+'">締切日</label><input type="date" id="d_'+t.id+'" data-t="'+t.id+'" data-k="date" value="'+esc(t.date||'')+'"></div>'+
+      '<div><label class="f" for="e_'+t.id+'">かかる時間（時間）</label><input type="number" id="e_'+t.id+'" min="0" max="200" step="0.5" inputmode="decimal" data-t="'+t.id+'" data-k="est" value="'+(t.est||'')+'" placeholder="例：3"></div></div>'+
+      '<p style="margin:8px 0 0"><span class="verdict v-'+di.k+'">'+di.t+'</span></p>'+
+      (sh>0.5?'<p class="note" style="margin-top:6px;color:var(--bad)">⚠️ '+fmtT(sh)+'ぶんが、原稿の開始日から締切までの作業時間に入りきらないよ。</p>':'')+'</section>';
+  });
   return h;
 }
 /* ---------- pomodoro ---------- */
@@ -589,7 +675,7 @@ function viewTimer(){
 }
 function editorHtml(){
   if(!modalDate)return '';
-  var d=parse(modalDate),cur=Math.round(capMin(d)/6)/10,isOv=Object.prototype.hasOwnProperty.call(S.over,modalDate);
+  var d=parse(modalDate),cur=Math.round(baseCap(d)/6)/10,isOv=Object.prototype.hasOwnProperty.call(S.over,modalDate);
   return '<div class="editor" id="editor"><b>✏️ '+fmtJP(d)+(HOL.has(modalDate)?' 🎌':'')+' の作業時間</b>'+
     '<div class="row" style="margin-top:8px"><input type="number" id="mh" aria-label="この日の作業時間（時間）" min="0" max="24" step="0.5" inputmode="decimal" value="'+cur+'" style="max-width:110px"><span>時間</span></div>'+
     '<div class="acts"><button class="btn sm" data-a="msave">保存</button><button class="btn ghost sm" data-a="mzero">休みにする</button>'+(isOv?'<button class="btn ghost sm" data-a="mclear">元に戻す</button>':'')+'<button class="btn ghost sm" data-a="mclose">閉じる</button></div></div>';
@@ -600,7 +686,7 @@ var app=document.getElementById('app');
 function render(){
   var sy=window.scrollY,g=document.getElementById('gscroll'),had=!!g,gl=g?g.scrollLeft:0;
   header();
-  app.innerHTML=(tab==='settings'?viewSettings():tab==='schedule'?viewSchedule():tab==='progress'?viewProgress():viewTimer());
+  app.innerHTML=(tab==='settings'?viewSettings():tab==='schedule'?viewSchedule():tab==='progress'?viewProgress():tab==='tasks'?viewTasks():viewTimer());
   var g2=document.getElementById('gscroll');
   if(g2){
     if(had)g2.scrollLeft=gl;
@@ -645,6 +731,8 @@ app.addEventListener('click',function(e){
       if(dir>0){for(var i=1;i<=S.pages;i++){if(!mm[i]){setPage(p2,i,true);break;}}}
       else{for(var j=S.pages;j>=1;j--){if(mm[j]){setPage(p2,j,false);break;}}}
       break;}
+    case 'addtask':S.tasks.push({id:uid(),name:v||'新しいタスク',date:'',est:0,done:false});break;
+    case 'deltask':if(!confirm('このタスクを削除する？')){return;}S.tasks=S.tasks.filter(function(t){return t.id!==v;});break;
     case 'calprev':calM=new Date(calM.getFullYear(),calM.getMonth()-1,1);break;
     case 'calnext':calM=new Date(calM.getFullYear(),calM.getMonth()+1,1);break;
     case 'day':modalDate=v;scrollEd=true;render();return;
@@ -669,6 +757,7 @@ app.addEventListener('change',function(e){
     else if(k==='buffer')S.buffer=Math.round(num(el.value,0,30,0));
     else if(k==='start'){if(el.value)S.start=el.value;}
     else if(k==='holSun')S.holSun=el.checked;
+    else if(k==='title')S.title=el.value;
   }else if(el.dataset.wd!==undefined){
     S.weekday[parseInt(el.dataset.wd,10)]=num(el.value,0,24,0);
   }else if(el.dataset.dl){
@@ -681,6 +770,13 @@ app.addEventListener('change',function(e){
       else if(kk==='min')p.min=num(el.value,0,600,p.min);
       else if(kk==='on')p.on=el.checked;
       else if(kk==='unit')p.unit=el.checked;}
+  }else if(el.dataset.t){
+    var tk=S.tasks.filter(function(x){return x.id===el.dataset.t;})[0];
+    if(tk){var k2=el.dataset.k;
+      if(k2==='name')tk.name=el.value||'タスク';
+      else if(k2==='date')tk.date=el.value||'';
+      else if(k2==='est')tk.est=num(el.value,0,200,0);
+      else if(k2==='done')tk.done=el.checked;}
   }else if(el.dataset.tm){
     var T=S.timer,tk=el.dataset.tm;
     if(tk==='sound')T.sound=el.checked;
@@ -694,7 +790,6 @@ document.getElementById('tabs').addEventListener('click',function(e){
   var el=e.target.closest('[data-a="tab"]');if(!el)return;tab=el.getAttribute('data-v');modalDate=null;render();window.scrollTo(0,0);
 });
 document.getElementById('miniT').addEventListener('click',function(){tab='timer';render();window.scrollTo(0,0);});
-document.getElementById('titleIn').addEventListener('change',function(e){S.title=e.target.value;save();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&modalDate){modalDate=null;render();}});
 
 render();
