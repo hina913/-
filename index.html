@@ -45,6 +45,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"M PLUS Rounded 
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding:12px 0 8px;}
 .brand{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .brand h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.02em;white-space:nowrap;}
+.bsel{flex:1;min-width:0;font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:var(--pink-soft);border:2px solid var(--line);border-radius:999px;padding:5px 10px;text-overflow:ellipsis;}
 .tsub{flex:1;min-width:0;font-size:13px;color:var(--sub);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dlrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto;gap:8px;align-items:center;margin-bottom:8px;}
 .qa{display:flex;flex-wrap:wrap;gap:8px;}
@@ -188,7 +189,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--pink);flex:none;}
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><h1>📅 原稿プランナー</h1><span class="tsub" id="titleSub"></span><button class="mini" id="miniT" hidden></button></div>
+    <div class="brand"><h1>📅 原稿プランナー</h1><select class="bsel" id="bookSel" aria-label="本を切り替え"></select><button class="mini" id="miniT" hidden></button></div>
     <nav class="tabs" id="tabs"></nav>
   </header>
   <main id="app"></main>
@@ -235,37 +236,98 @@ function defaults(){
     pd:{},over:{},pview:null,pomo:{},tasks:[],timer:defTimer()
   };
 }
+var BOOK_KEYS=['title','pages','start','buffer','deadlines','active','procs','pd','tasks','fin'];
+var SHARED_KEYS=['weekday','holSun','over','pomo','timer','pview'];
 var fresh=false;
-function load(){
+function normalizeFlat(o){
+  if(!o.pd){
+    o.pd={};
+    o.procs.forEach(function(p){
+      var n=Math.min(o.pages,(o.done&&o.done[p.id])||0),m={};
+      for(var i=1;i<=n;i++)m[i]=1;
+      o.pd[p.id]=m;
+    });
+    delete o.done;
+  }
+  o.procs.forEach(function(p){if(p.unit===undefined)p.unit=(p.name!=='ネーム');});
+  if(!o.timer)o.timer=defTimer();
+  if(!o.pomo)o.pomo={};
+  if(!o.tasks)o.tasks=[];
+  if(!o.over)o.over={};
+  if(o.pview===undefined)o.pview=null;
+  return o;
+}
+function makeBook(title,src){
+  var d=defaults(),b={id:uid(),fin:false};
+  BOOK_KEYS.forEach(function(k){if(k!=='fin')b[k]=d[k];});
+  b.title=title||'';
+  if(src){
+    b.pages=src.pages;
+    b.procs=src.procs.map(function(p){return {id:uid(),name:p.name,min:p.min,on:p.on,unit:p.unit};});
+  }
+  return b;
+}
+function newDB(){
+  var d=defaults(),b={id:uid(),fin:false},sh={};
+  BOOK_KEYS.forEach(function(k){if(k!=='fin')b[k]=d[k];});
+  SHARED_KEYS.forEach(function(k){sh[k]=d[k];});
+  return {books:[b],cur:b.id,shared:sh};
+}
+function loadDB(){
   try{
     var r=localStorage.getItem(KEY);
     if(r){
       var o=JSON.parse(r);
-      if(o&&o.procs&&o.deadlines){
-        if(!o.pd){
-          o.pd={};
-          o.procs.forEach(function(p){
-            var n=Math.min(o.pages,(o.done&&o.done[p.id])||0),m={};
-            for(var i=1;i<=n;i++)m[i]=1;
-            o.pd[p.id]=m;
-          });
-          delete o.done;
-        }
-        o.procs.forEach(function(p){if(p.unit===undefined)p.unit=(p.name!=='ネーム');});
-        if(!o.timer)o.timer=defTimer();
-        if(!o.pomo)o.pomo={};
-        if(!o.tasks)o.tasks=[];
-        if(o.pview===undefined)o.pview=null;
+      if(o&&o.books&&o.books.length&&o.shared){
+        o.books.forEach(function(b){if(!b.tasks)b.tasks=[];if(!b.pd)b.pd={};if(b.fin===undefined)b.fin=false;});
+        var sh=o.shared;
+        if(!sh.timer)sh.timer=defTimer();
+        if(!sh.pomo)sh.pomo={};
+        if(!sh.over)sh.over={};
+        if(sh.pview===undefined)sh.pview=null;
+        if(!o.books.some(function(b){return b.id===o.cur;}))o.cur=o.books[0].id;
         return o;
+      }
+      if(o&&o.procs&&o.deadlines){
+        try{localStorage.setItem(KEY+'.bak',r);}catch(e){}
+        o=normalizeFlat(o);
+        var bk={id:uid(),fin:false},sh2={};
+        BOOK_KEYS.forEach(function(k){if(k!=='fin')bk[k]=o[k];});
+        SHARED_KEYS.forEach(function(k){sh2[k]=o[k];});
+        return {books:[bk],cur:bk.id,shared:sh2};
       }
     }
   }catch(e){}
-  fresh=true;return defaults();
+  fresh=true;return newDB();
 }
-var S=load();
-function save(){tuCache=null;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function buildS(db){
+  var st={},b=db.books.filter(function(x){return x.id===db.cur;})[0]||db.books[0];
+  SHARED_KEYS.forEach(function(k){st[k]=db.shared[k];});
+  BOOK_KEYS.forEach(function(k){st[k]=b[k];});
+  st.bookId=b.id;return st;
+}
+var DB=loadDB();
+var S=buildS(DB);
+function save(){
+  tuCache=null;
+  try{
+    var bk=DB.books.filter(function(x){return x.id===S.bookId;})[0];
+    if(bk)BOOK_KEYS.forEach(function(k){bk[k]=S[k];});
+    SHARED_KEYS.forEach(function(k){DB.shared[k]=S[k];});
+    DB.cur=S.bookId;
+    localStorage.setItem(KEY,JSON.stringify(DB));
+  }catch(e){}
+}
+function switchTo(id){
+  save();
+  var b=DB.books.filter(function(x){return x.id===id;})[0];if(!b)return;
+  BOOK_KEYS.forEach(function(k){S[k]=b[k];});
+  S.bookId=id;DB.cur=id;
+  calM=null;modalDate=null;tuCache=null;bookForm=false;
+  save();render();window.scrollTo(0,0);
+}
 var tab=fresh?'settings':'schedule';
-var calM=null,modalDate=null,scrollEd=false;
+var calM=null,modalDate=null,scrollEd=false,bookForm=false,scrollBook=false;
 
 /* ---------- calc ---------- */
 function baseCap(d){
@@ -384,10 +446,25 @@ function header(){
   var tabs=[['settings','⚙️','設定'],['schedule','📊','予定'],['progress','✅','進捗'],['tasks','📌','タスク'],['timer','⏱','タイマー']];
   document.getElementById('tabs').innerHTML=tabs.map(function(t){
     return '<button data-a="tab" data-v="'+t[0]+'" class="'+(tab===t[0]?'on':'')+'"><span class="e">'+t[1]+'</span><span>'+t[2]+'</span></button>';}).join('');
-  var ts=document.getElementById('titleSub');if(ts)ts.textContent=S.title||'';
+  var sel=document.getElementById('bookSel');
+  if(sel)sel.innerHTML=DB.books.map(function(b){
+    var cur=b.id===S.bookId,nm=(cur?S.title:b.title)||'（無題の本）',fin=cur?S.fin:b.fin;
+    return '<option value="'+b.id+'"'+(cur?' selected':'')+'>'+(fin?'✅ ':'📖 ')+esc(nm)+'</option>';
+  }).join('')+'<option value="__new">＋ 新しい本を作る</option>';
+}
+function booksCard(){
+  var h='<section class="card" id="bookcard"><h2>📚 本の管理</h2><p class="note">ページ数・締切・工程・進捗・タスクは本ごとに別々に保存されるよ。曜日ごとの作業時間、日別の休み、ポモドーロの記録は全部の本で共通だよ。画面上の選択欄からも切り替えられるよ。</p>';
+  DB.books.forEach(function(b){
+    var cur=b.id===S.bookId,nm=(cur?S.title:b.title)||'（無題の本）',fin=cur?S.fin:b.fin;
+    h+='<div class="row"><span class="grow1"><b>'+esc(nm)+'</b> '+(cur?'<span class="verdict v-ok" style="margin:0">いま開いてる</span> ':'')+(fin?'<span class="verdict v-warn" style="margin:0">✅ 完成済み</span>':'')+'</span>'+(cur?'':'<button class="btn ghost sm" data-a="openbook" data-v="'+b.id+'">開く</button>')+'</div>';
+  });
+  h+='<div class="qa" style="margin-top:8px"><button class="btn sm" data-a="newbook">＋ 新しい本を作る</button><button class="btn ghost sm" data-a="finbook">'+(S.fin?'↩ 制作中に戻す':'✅ この本を完成済みにする')+'</button></div>';
+  if(bookForm)h+='<div class="editor" id="bookform" style="margin-top:12px"><b>📖 新しい本</b><div style="margin:8px 0"><input type="text" id="nbTitle" placeholder="本のタイトル（例：2冊目）"></div><label class="row"><input type="checkbox" id="nbCopy" checked><span>いまの本の工程設定（工程名・分数・順番）を引き継ぐ</span></label><div class="acts"><button class="btn sm" data-a="makebook">作成</button><button class="btn ghost sm" data-a="cancelbook">キャンセル</button></div></div>';
+  h+='<div style="margin-top:14px"><button class="btn danger sm" data-a="delbook">いまの本を削除</button></div></section>';
+  return h;
 }
 function viewSettings(){
-  var h='';
+  var h=booksCard();
   h+='<section class="card"><h2>📖 原稿のこと</h2><p class="note">ページ数と開始日を入れてね。</p>'+
     '<div style="margin-bottom:10px"><label class="f" for="ttl">作品タイトル</label><input type="text" id="ttl" data-c="title" value="'+esc(S.title)+'" placeholder="例：新刊"></div>'+
     '<div class="grid2"><div><label class="f" for="pg">総ページ数</label><input type="number" id="pg" min="1" max="500" inputmode="numeric" data-c="pages" value="'+S.pages+'"></div>'+
@@ -416,7 +493,7 @@ function viewSettings(){
   });
   var tot=0;activeProcs().forEach(function(p){tot+=p.min*S.pages;});
   h+='<button class="btn ghost sm" data-a="addpr">＋ 工程を追加</button><p class="note" style="margin-top:12px">全工程の合計：<b>'+fmtT(tot)+'</b>（'+S.pages+'ページぶん）</p></section>';
-  h+='<section class="card"><h2>🧹 リセット</h2><p class="note">全部消して最初の状態に戻します。</p><button class="btn danger sm" data-a="reset">すべて初期化</button></section>';
+  h+='<section class="card"><h2>🧹 リセット</h2><p class="note">すべての本のデータを消して、最初の状態に戻します。</p><button class="btn danger sm" data-a="reset">すべて初期化</button></section>';
   return h;
 }
 function viewSchedule(){
@@ -697,6 +774,7 @@ function render(){
   }
   window.scrollTo(0,sy);
   if(scrollEd){scrollEd=false;var ed=document.getElementById('editor');if(ed){ed.scrollIntoView({block:'center',behavior:'smooth'});var mh=document.getElementById('mh');if(mh)mh.focus({preventScroll:true});}}
+  if(scrollBook){scrollBook=false;var bf=document.getElementById('bookform');if(bf){bf.scrollIntoView({block:'center',behavior:'smooth'});var nt2=document.getElementById('nbTitle');if(nt2)nt2.focus({preventScroll:true});}}
   paintTimer();
 }
 function num(v,lo,hi,dflt){var n=parseFloat(v);if(isNaN(n))return dflt;return Math.min(hi,Math.max(lo,n));}
@@ -733,6 +811,20 @@ app.addEventListener('click',function(e){
       break;}
     case 'addtask':S.tasks.push({id:uid(),name:v||'新しいタスク',date:'',est:0,done:false});break;
     case 'deltask':if(!confirm('このタスクを削除する？')){return;}S.tasks=S.tasks.filter(function(t){return t.id!==v;});break;
+    case 'newbook':bookForm=true;scrollBook=true;render();return;
+    case 'cancelbook':bookForm=false;render();return;
+    case 'makebook':{
+      var nt=document.getElementById('nbTitle'),cp=document.getElementById('nbCopy');
+      save();
+      var nb=makeBook(nt?nt.value.trim():'',cp&&cp.checked?S:null);
+      DB.books.push(nb);tab='settings';switchTo(nb.id);return;}
+    case 'openbook':switchTo(v);return;
+    case 'finbook':S.fin=!S.fin;break;
+    case 'delbook':{
+      if(DB.books.length<=1){alert('本は最低1冊必要だよ。入れ替えたいときは「すべて初期化」を使ってね。');return;}
+      if(!confirm('「'+(S.title||'無題の本')+'」を削除する？（この本の進捗・タスクも消えます）')){return;}
+      DB.books=DB.books.filter(function(x){return x.id!==S.bookId;});
+      switchTo(DB.books[0].id);return;}
     case 'calprev':calM=new Date(calM.getFullYear(),calM.getMonth()-1,1);break;
     case 'calnext':calM=new Date(calM.getFullYear(),calM.getMonth()+1,1);break;
     case 'day':modalDate=v;scrollEd=true;render();return;
@@ -740,7 +832,7 @@ app.addEventListener('click',function(e){
     case 'msave':{var x=document.getElementById('mh');S.over[modalDate]=num(x.value,0,24,0);modalDate=null;break;}
     case 'mzero':S.over[modalDate]=0;modalDate=null;break;
     case 'mclear':delete S.over[modalDate];modalDate=null;break;
-    case 'reset':if(!confirm('本当にすべて初期化する？（タイマーの記録も消えます）')){return;}S=defaults();tab='settings';calM=null;break;
+    case 'reset':if(!confirm('本当にすべて初期化する？（すべての本とタイマーの記録が消えます）')){return;}DB=newDB();S=buildS(DB);tab='settings';calM=null;tuCache=null;bookForm=false;break;
     case 'tstart':{initAudio();var T=S.timer;if(!T.endAt)T.endAt=Date.now()+T.remain;break;}
     case 'tpause':{var T2=S.timer;if(T2.endAt){T2.remain=Math.max(0,T2.endAt-Date.now());T2.endAt=null;}break;}
     case 'treset':{var T3=S.timer;T3.endAt=null;T3.remain=durOf(T3.mode);break;}
@@ -788,6 +880,11 @@ app.addEventListener('change',function(e){
 });
 document.getElementById('tabs').addEventListener('click',function(e){
   var el=e.target.closest('[data-a="tab"]');if(!el)return;tab=el.getAttribute('data-v');modalDate=null;render();window.scrollTo(0,0);
+});
+document.getElementById('bookSel').addEventListener('change',function(e){
+  var v=e.target.value;
+  if(v==='__new'){tab='settings';bookForm=true;scrollBook=true;render();}
+  else switchTo(v);
 });
 document.getElementById('miniT').addEventListener('click',function(){tab='timer';render();window.scrollTo(0,0);});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&modalDate){modalDate=null;render();}});
