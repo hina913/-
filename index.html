@@ -153,6 +153,9 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--pink);flex:none;}
 .qb{font:inherit;font-weight:700;font-size:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer;}
 .qb.on{background:var(--pink);border-color:var(--pink);color:#3b2340;}
 body.sheet-open .wrap{padding-bottom:290px;}
+.pace{margin-top:14px;padding:12px 14px;background:var(--bg);border-radius:16px;}
+.pace .pl{margin:0;font-weight:800;font-size:15px;}
+.row .tm{white-space:nowrap;flex:none;}
 .chip.big2{font-size:13px;padding:2px 10px;border-radius:999px;}
 .cell.sel{border-color:var(--ink);}
 .editor{background:var(--pink-soft);border-radius:16px;padding:12px 14px;margin-bottom:10px;}
@@ -197,7 +200,7 @@ body.sheet-open .wrap{padding-bottom:290px;}
     <nav class="tabs" id="tabs"></nav>
   </header>
   <main id="app"></main>
-  <p class="foot">データはこのブラウザに自動保存されるよ 💾<br>バージョン5（休みの日の表示を修正）</p>
+  <p class="foot">データはこのブラウザに自動保存されるよ 💾<br>バージョン6（ペース表示をやさしく）</p>
 </div>
 
 <script>
@@ -209,8 +212,8 @@ var HOL=new Set(['2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20
 var DOW=['日','月','火','水','木','金','土'];
 var PAL=['#ffc9de','#ffe2a8','#c9efb8','#bfe1ff','#dccbff','#ffcbb8','#b9ece6','#f1cff5'];
 var LEVELS=[
- {min:1.3,e:'🚀',t:'絶好調'},{min:1.15,e:'✨',t:'好調'},{min:1.05,e:'😊',t:'順調'},{min:0.97,e:'👌',t:'予定どおり'},
- {min:0.9,e:'🙂',t:'ほんの少し遅れ'},{min:0.8,e:'😅',t:'やや遅れ'},{min:0.65,e:'😰',t:'遅れ気味'},{min:0.4,e:'😱',t:'かなり遅れ'},{min:-1,e:'🆘',t:'ピンチ'}
+ {min:1.3,e:'🌟',t:'とてもいいペース'},{min:1.15,e:'✨',t:'いいペース'},{min:1.05,e:'😊',t:'順調'},{min:0.97,e:'👌',t:'予定どおり'},
+ {min:0.9,e:'🙂',t:'ほんの少しゆっくり'},{min:0.8,e:'☺️',t:'ややゆっくり'},{min:0.65,e:'🌱',t:'ゆっくりめ'},{min:0.4,e:'🌙',t:'だいぶゆっくり'},{min:-1,e:'🌤',t:'これから取り戻そう'}
 ];
 var MODE_LABEL={work:'🍅 作業',brk:'☕ 休憩',long:'🛌 長めの休憩'};
 function pad(n){return String(n).padStart(2,'0');}
@@ -241,7 +244,7 @@ function defaults(){
   };
 }
 var BOOK_KEYS=['title','pages','start','buffer','deadlines','active','procs','pd','tasks','fin'];
-var SHARED_KEYS=['weekday','holSun','over','pomo','timer','pview'];
+var SHARED_KEYS=['weekday','holSun','over','pomo','timer','pview','hidePace'];
 var fresh=false;
 function normalizeFlat(o){
   if(!o.pd){
@@ -485,7 +488,8 @@ function viewSettings(){
   [1,2,3,4,5,6,0].forEach(function(i){
     h+='<div class="wd"><span class="'+(i===0?'sun':i===6?'sat':'')+'">'+DOW[i]+'</span><input type="number" min="0" max="24" step="0.5" inputmode="decimal" aria-label="'+DOW[i]+'曜日の作業時間" data-wd="'+i+'" value="'+S.weekday[i]+'"></div>';
   });
-  h+='</div><label class="row" style="margin-top:12px"><input type="checkbox" data-c="holSun" '+(S.holSun?'checked':'')+'><span>祝日は日曜と同じ時間にする🎌</span></label></section>';
+  h+='</div><label class="row" style="margin-top:12px"><input type="checkbox" data-c="holSun" '+(S.holSun?'checked':'')+'><span>祝日は日曜と同じ時間にする🎌</span></label>'+
+    '<label class="row"><input type="checkbox" data-c="showPace" '+(S.hidePace?'':'checked')+'><span>「進捗」にペースの目安（計画との差）を表示する</span></label></section>';
   h+='<section class="card"><h2>🖊️ 工程</h2><p class="note">上から順番に進める前提で計算するよ。「分/p」は1ページあたりの目安時間。<br>📄にチェックした工程は「1ページごとにまとめて進める」扱いで、計画は p1の全部 → p2の全部…の順に組まれるよ。チェックなしの工程（ネームなど）は全ページ分を先にまとめて進める扱い。</p>';
   S.procs.forEach(function(p,i){
     h+='<div class="procbox"><div class="proc"><input type="checkbox" aria-label="'+esc(p.name)+'を使う" data-pr="'+p.id+'" data-k="on" '+(p.on?'checked':'')+'>'+
@@ -591,22 +595,29 @@ function viewProgress(){
   var act=activeDl();
   if(!act)return '<div class="card empty">締切を先に登録してね🏁</div>';
   var P=planFor(act),pc=pace(P),st=status(act),ap=activeProcs();
-  var h='<section class="card"><h2>🎯 いまのペース（'+esc(act.name)+'基準）</h2>';
-  if(pc.lv===-1)h+='<p class="big">🌱 これからスタート</p><p class="note">計画上、まだ進んでいるはずの作業がないよ。やった分をチェックしていこう。</p>';
-  else h+='<p class="big">'+LEVELS[pc.lv].e+' '+LEVELS[pc.lv].t+'</p>';
-  var cols=['#7fd6b0','#8fdcb8','#b9e6a8','#d9ec9a','#ffe18a','#ffd08a','#ffb98a','#ff9aa8','#ff7a99'],m='';
-  for(var i=0;i<9;i++)m+='<i class="'+(i===pc.lv?'on':'')+'" style="background:'+cols[i]+'"></i>';
-  h+='<div class="meter" aria-hidden="true">'+m+'</div><div class="note" style="display:flex;justify-content:space-between"><span>絶好調</span><span>ピンチ</span></div>';
-  h+='<div class="stats"><div class="stat"><b>計画では昨日まで</b><span>'+fmtT(pc.planned)+'</span></div><div class="stat"><b>実際にやった分</b><span>'+fmtT(pc.actual)+'</span></div>'+
-     '<div class="stat"><b>残りの作業</b><span>'+fmtT(st.R)+'</span></div><div class="stat"><b>今日から作業できる</b><span>'+fmtT(st.F.cap)+'</span></div></div>';
-  h+='<p style="margin:12px 0 0"><span class="verdict v-'+st.k+'">'+st.t+'</span></p>';
+  var h='<section class="card"><h2>🎯 いまの調子（'+esc(act.name)+'基準）</h2>';
+  h+='<p class="big">'+esc(st.t)+'</p>';
+  if(st.d)h+='<p class="note" style="margin:2px 0 0">'+esc(st.d)+'</p>';
   if(st.R>0&&st.P.total>0){
     if(st.F.cap<st.R-0.5){
       var lack=st.R-st.F.cap,days=Math.max(1,st.F.workDays);
-      h+='<p class="note" style="margin-top:8px">このままだと <b>'+fmtT(lack)+'</b> 足りない。作業できる日が '+st.F.workDays+' 日あるので、毎日 <b>約'+fmtT(lack/days)+'</b> 増やすか、締切 or 作業できる日を見直そう。</p>';
+      h+='<p class="note" style="margin-top:8px">このままだと <b>'+fmtT(lack)+'</b> 足りないよ。作業できる日が '+st.F.workDays+' 日あるので、毎日 <b>約'+fmtT(lack/days)+'</b> 増やすか、締切や作業できる日を見直そう。</p>';
     }else if(st.F.workDays>0){
       h+='<p class="note" style="margin-top:8px">残り '+st.F.workDays+' 日の作業日で、1日あたり平均 <b>'+fmtT(st.R/st.F.workDays)+'</b> やれば間に合うよ。</p>';
     }
+  }
+  h+='<div class="stats"><div class="stat"><b>残りの作業</b><span>'+fmtT(st.R)+'</span></div><div class="stat"><b>今日から作業できる</b><span>'+fmtT(st.F.cap)+'</span></div></div>';
+  if(!S.hidePace){
+    var cols=['#a6e3c8','#b3e6cd','#c6e9d6','#d8ecdd','#e4e8f4','#ddd8f6','#d5cbf4','#ccbff2','#c3b3ef'],m='';
+    for(var i=0;i<9;i++)m+='<i class="'+(i===pc.lv?'on':'')+'" style="background:'+cols[i]+'"></i>';
+    h+='<div class="pace"><p class="pl">ペース　'+(pc.lv===-1?'🌱 これからスタート':LEVELS[pc.lv].e+' '+LEVELS[pc.lv].t)+'</p>';
+    if(pc.lv>=0){
+      var diff=pc.actual-pc.planned;
+      h+='<div class="meter" aria-hidden="true">'+m+'</div><div class="note" style="display:flex;justify-content:space-between;margin:0"><span>計画より早い</span><span>ゆっくり</span></div>';
+      h+='<p class="note" style="margin-top:8px">計画では昨日まで '+fmtT(pc.planned)+'、実際にやったのは '+fmtT(pc.actual)+'。'+
+        (diff<0?(st.k==='ok'?'計画よりゆっくりだけど、締切までの時間には余裕があるよ。':'計画より '+fmtT(-diff)+' ゆっくりめだよ。'):'計画より '+fmtT(diff)+' 先に進んでるよ。')+'</p>';
+    }else h+='<p class="note" style="margin:0">計画上、まだ進んでいるはずの作業がないよ。やった分をチェックしていこう。</p>';
+    h+='</div>';
   }
   h+='</section>';
   /* today's plan */
@@ -615,11 +626,11 @@ function viewProgress(){
   if(!ents.length&&!(TU().plan[fmt(today())]||[]).length)h+='<p class="note">今日は計画に作業がないよ（休みの日、または計画の期間外）。</p>';
   else ents.forEach(function(en){
     var sg=P.seq.filter(function(q){return q.key===en.key;})[0];if(!sg)return;
-    h+='<div class="row"><span class="chip big2" style="background:'+PAL[sg.color%PAL.length]+'">'+(sg.group?'📄 '+esc(pageRange(en))+'（'+esc(sg.names)+'）':esc(sg.label))+'</span><b>'+fmtT(en.m)+'</b></div>';
+    h+='<div class="row"><span class="chip big2" style="background:'+PAL[sg.color%PAL.length]+'">'+(sg.group?'📄 '+esc(pageRange(en)):esc(sg.label))+'</span><span class="grow1 note" style="margin:0">'+(sg.group?esc(sg.names):'')+'</span><b class="tm">'+fmtT(en.m)+'</b></div>';
   });
   (TU().plan[fmt(today())]||[]).forEach(function(a){
     var tk=S.tasks.filter(function(q){return q.id===a.id;})[0];if(!tk)return;
-    h+='<div class="row"><span class="chip big2 tkc">📌 '+esc(tk.name)+'</span><b>'+fmtT(a.m)+'</b></div>';
+    h+='<div class="row"><span class="chip big2 tkc">📌 '+esc(tk.name)+'</span><span class="grow1"></span><b class="tm">'+fmtT(a.m)+'</b></div>';
   });
   h+='</section>';
   if(!ap.length)return h+'<div class="card empty">工程を設定してね⚙️</div>';
@@ -860,6 +871,7 @@ app.addEventListener('change',function(e){
     else if(k==='start'){if(el.value)S.start=el.value;}
     else if(k==='holSun')S.holSun=el.checked;
     else if(k==='title')S.title=el.value;
+    else if(k==='showPace')S.hidePace=!el.checked;
   }else if(el.dataset.wd!==undefined){
     S.weekday[parseInt(el.dataset.wd,10)]=num(el.value,0,24,0);
   }else if(el.dataset.dl){
